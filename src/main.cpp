@@ -89,7 +89,7 @@ void loop() {
     //   ShowSerial.println("");
     //   ShowSerial.println("Photosensitive: " + String(radarStatus.photosensitive));
     // }
-        if (radarStatus.radarMode == 1) {
+      if (radarStatus.radarMode == 1) {
       ShowSerial.print("Move:");
       for (int i = 0; i < 8; i++) {
         ShowSerial.print(" " + String(movingPower.avg_value(i)) + ",");
