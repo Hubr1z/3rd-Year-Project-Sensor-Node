@@ -49,7 +49,7 @@ Seeed_HSP24 xiao_config(COMSerial);
 Seeed_HSP24::RadarStatus radarStatus;
 Seeed_HSP24::AskStatus askStatus;
 
-RollingAVG staticPower;
+// RollingAVG staticPower;
 RollingAVG movingPower;
 
 // Parsing the acquired radar status
@@ -103,6 +103,8 @@ void setup() {
   pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
   pAdvertising->setMinPreferred(0x12);
   BLEDevice::startAdvertising();
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P18);
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_SCAN, ESP_PWR_LVL_P18);
   Serial.println("Characteristic defined! Now you can read it in your phone!");
 }
 
@@ -116,8 +118,10 @@ void loop() {
   //Get radar status
     do {
       radarStatus = xiao_config.getStatus();
-      staticPower.get_samples(radarStatus.radarStaticPower.staticGate);
-      staticPower.rolling_avg();
+
+      // staticPower.get_sample_set(radarStatus.radarStaticPower.staticGate);
+      // staticPower.rolling_avg();
+
       movingPower.get_samples(radarStatus.radarMovePower.moveGate);
       movingPower.rolling_avg();
       retryCount++;
@@ -130,14 +134,24 @@ void loop() {
   }
   pCharacteristic->setValue((uint8_t *)&movingPowerA, sizeof(movingPowerA));
   pCharacteristic->notify();
+      ShowSerial.print("Status: " + String(targetStatusToString(radarStatus.targetStatus)) + "  ----   ");
+      ShowSerial.println("Distance: " + String(radarStatus.distance) + "  Mode: " + String(radarStatus.radarMode));
+
+      if (radarStatus.radarMode == 1) {
+        ShowSerial.print("Move:");
+        for (int i = 0; i < 8; i++) {
+          ShowSerial.print(" " + String(movingPower.avg_value(i)) + ",");
+        }
+        }
+        ShowSerial.println("");
+        ShowSerial.println("Photosensitive: " + String(radarStatus.photosensitive));
   }
   else{
     BLEDevice::startAdvertising();
   }
   delay(1000);
 }
-
-
+}
 
 
 
@@ -160,5 +174,5 @@ void loop() {
   //       ShowSerial.println("");
   //       ShowSerial.println("Photosensitive: " + String(radarStatus.photosensitive));
   //     }
-  //   }
+
 

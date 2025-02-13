@@ -17,6 +17,12 @@
     gates_circular_buffer_ele = gates_circular_buffer_ele%roll_AVG_array_size;
   }
 
+  void RollingAVG::get_sample_set(int *arg){
+    for (int i = 0; i < roll_AVG_array_size; i++){
+      get_samples(arg);
+    }
+  }
+
   void RollingAVG::rolling_avg(){
 
   //Calculate average of circular buffer

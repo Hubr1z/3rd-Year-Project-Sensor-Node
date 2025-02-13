@@ -8,6 +8,7 @@ class RollingAVG{
     public:
         RollingAVG();
         void get_samples(int *arg);
+        void get_sample_set(int *arg);
         void rolling_avg();
         int avg_value(int i);
     private:
