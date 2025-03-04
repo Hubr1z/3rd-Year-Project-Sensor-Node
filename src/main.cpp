@@ -26,6 +26,7 @@ BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
 uint8_t movingPowerA[8], staticPowerA[8];
 
+
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
     deviceConnected = true;
@@ -122,35 +123,25 @@ void loop() {
       // staticPower.get_sample_set(radarStatus.radarStaticPower.staticGate);
       // staticPower.rolling_avg();
 
-      movingPower.get_samples(radarStatus.radarMovePower.moveGate);
+      movingPower.sample_acquisition(radarStatus.radarMovePower.moveGate);
+
       movingPower.rolling_avg();
       retryCount++;
     } while (radarStatus.targetStatus == Seeed_HSP24::TargetStatus::ErrorFrame && retryCount < MAX_RETRIES);
 
-  if (radarStatus.targetStatus != Seeed_HSP24::TargetStatus::ErrorFrame) {
-  //Put values into array
-  for(uint8_t i = 0; i < 8; i++) {
-    movingPowerA[i] = movingPower.avg_value(i);
-  }
-  pCharacteristic->setValue((uint8_t *)&movingPowerA, sizeof(movingPowerA));
-  pCharacteristic->notify();
-      ShowSerial.print("Status: " + String(targetStatusToString(radarStatus.targetStatus)) + "  ----   ");
-      ShowSerial.println("Distance: " + String(radarStatus.distance) + "  Mode: " + String(radarStatus.radarMode));
-
-      if (radarStatus.radarMode == 1) {
-        ShowSerial.print("Move:");
-        for (int i = 0; i < 8; i++) {
-          ShowSerial.print(" " + String(movingPower.avg_value(i)) + ",");
-        }
-        }
-        ShowSerial.println("");
-        ShowSerial.println("Photosensitive: " + String(radarStatus.photosensitive));
+    if (radarStatus.targetStatus != Seeed_HSP24::TargetStatus::ErrorFrame) {
+    //Put values into array
+    for(uint8_t i = 0; i < 8; i++) {
+      movingPowerA[i] = movingPower.avg_value(i);
+    }
+    pCharacteristic->setValue((uint8_t *)&movingPowerA, sizeof(movingPowerA));
+    pCharacteristic->notify();
+    }
   }
   else{
-    BLEDevice::startAdvertising();
+  BLEDevice::startAdvertising();
   }
   delay(1000);
-}
 }
 
 

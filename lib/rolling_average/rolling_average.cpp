@@ -2,6 +2,7 @@
   #include <string.h>
 
   RollingAVG::RollingAVG(){
+    samples_since_start = 0;
     gates_circular_buffer_ele = 0;
     memset(gates_circular_buffer, 0, sizeof(gates_circular_buffer));
     memset(gate_sum_circular_buffer, 0, sizeof(gate_sum_circular_buffer));
@@ -17,9 +18,10 @@
     gates_circular_buffer_ele = gates_circular_buffer_ele%roll_AVG_array_size;
   }
 
-  void RollingAVG::get_sample_set(int *arg){
-    for (int i = 0; i < roll_AVG_array_size; i++){
+  void RollingAVG::sample_acquisition(int* arg){
+    for (int i = 0; i < roll_AVG_array_size; i++) {
       get_samples(arg);
+      samples_since_start++;
     }
   }
 

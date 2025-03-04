@@ -8,10 +8,11 @@ class RollingAVG{
     public:
         RollingAVG();
         void get_samples(int *arg);
-        void get_sample_set(int *arg);
         void rolling_avg();
         int avg_value(int i);
+        void sample_acquisition(int* arg);
     private:
+        int samples_since_start;
 
         int gates_circular_buffer[num_gates][roll_AVG_array_size];
         int gates_circular_buffer_ele; //keeps track of which element for the circular buffer gate
