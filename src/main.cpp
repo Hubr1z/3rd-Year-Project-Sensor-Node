@@ -17,7 +17,7 @@
 #define CHARACTERISTIC_UUID_NODE2 "4f056d6b-d747-42bf-87d3-275649d82521"
 
 //mmWave Directives
-#include <SoftwareSerial.h>
+#include <HardwareSerial.h>
 #include <mmwave_for_xiao.h>
 #include <rolling_average.h>
 
@@ -38,14 +38,15 @@ class MyServerCallbacks: public BLEServerCallbacks {
 };
 
 // Define the SoftwareSerial object, D2 as RX, D3 as TX, connect to the serial port of the mmwave sensor
-SoftwareSerial COMSerial(D2, D3);
+// SoftwareSerial RadarSerial(D2, D3);
+HardwareSerial RadarSerial(0); // Alias for UART0 (Serial0)
 
 // Creates a global Serial object for printing debugging information
 #define ShowSerial Serial
 
 // Initialising the radar configuration
 // Seeed_HSP24 xiao_config(COMSerial, ShowSerial);
-Seeed_HSP24 xiao_config(COMSerial);
+Seeed_HSP24 xiao_config(RadarSerial);
 
 Seeed_HSP24::RadarStatus radarStatus;
 Seeed_HSP24::AskStatus askStatus;
@@ -73,8 +74,8 @@ void setup() {
   //clear array values
   memset(movingPowerA, 0, sizeof(movingPowerA));
   //mmWave Connections
-  COMSerial.begin(9600);
-  ShowSerial.begin(9600);
+  RadarSerial.begin(115200, SERIAL_8N1, D7, D6);
+  ShowSerial.begin(115200);
   delay(500);
 
   ShowSerial.println("Programme Starting!");
@@ -87,7 +88,7 @@ void setup() {
   // }
 
   //BLE Connections
-  Serial.begin(115200);
+
   Serial.println("Starting BLE work!");
 
   BLEDevice::init(bleServerName2);
@@ -141,7 +142,7 @@ void loop() {
   else{
   BLEDevice::startAdvertising();
   }
-  delay(1000);
+  
 }
 
 
