@@ -21,10 +21,12 @@
 #include <mmwave_for_xiao.h>
 #include <rolling_average.h>
 
+#include "esp_timer.h"
 //BLE Globals
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
 uint8_t movingPowerA[8], staticPowerA[8];
+bool lowBattery = false;
 
 
 class MyServerCallbacks: public BLEServerCallbacks {
@@ -70,7 +72,41 @@ static const char* targetStatusToString(Seeed_HSP24::TargetStatus status) {
   }
 }
 
+void ISR(void *arg){
+  uint32_t Vbatt = 0;
+  for(int i = 0; i < 16; i++) {
+    Vbatt = Vbatt + analogReadMilliVolts(A0); // ADC with correction   
+  }
+  float Vbattf = 2 * Vbatt / 16 / 1000.0;     // attenuation ratio 1/2, mV --> V
+  Serial.println(Vbattf, 3);
+
+  if (Vbattf < 3.5){
+    lowBattery = true;
+    if (digitalRead (LED_BUILTIN))
+      digitalWrite(LED_BUILTIN, LOW);
+    else
+      digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else
+    lowBattery = false;
+};
+
 void setup() {
+  pinMode(A0, INPUT);         // ADC
+  pinMode(LED_BUILTIN, OUTPUT);
+  //LED Blink Ticker
+  esp_timer_handle_t handle;
+  esp_timer_create_args_t timerISR = {
+    .callback = ISR,        //!< Function to call when timer expires
+    .arg = nullptr,                          //!< Argument to pass to the callback
+    .dispatch_method = ESP_TIMER_TASK,   //!< Call the callback from task or from ISR
+    .name = "Timer1",               //!< Timer name, used in esp_timer_dump function
+    .skip_unhandled_events = true,     //!< Skip unhandled events for periodic timers
+  };
+  esp_timer_create(&timerISR, &handle);
+  esp_timer_start_periodic(handle, 1000000);
+
+
   //clear array values
   memset(movingPowerA, 0, sizeof(movingPowerA));
   //mmWave Connections
@@ -111,7 +147,7 @@ void setup() {
 }
 
 void loop() {
-
+if (1){
   if (deviceConnected) {
   
     int retryCount = 0;
@@ -142,7 +178,9 @@ void loop() {
   else{
   BLEDevice::startAdvertising();
   }
-  
+}
+else
+BLEDevice::stopAdvertising();
 }
 
 
