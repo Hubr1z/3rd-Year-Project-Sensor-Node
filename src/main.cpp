@@ -22,12 +22,18 @@
 #include <rolling_average.h>
 
 #include "esp_timer.h"
+
+#define vBattThreshold 3.5
+#define BLE_TRANSMISSION_INTERVAL 1000000
+#define BATTERY_CHECK_INTERVAL 1000000
+
 //BLE Globals
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
 uint8_t movingPowerA[8], staticPowerA[8];
 bool lowBattery = false;
-
+volatile bool sendDataFlag = false;
+volatile bool reAdvertiseFlag = false;
 
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
@@ -72,7 +78,7 @@ static const char* targetStatusToString(Seeed_HSP24::TargetStatus status) {
   }
 }
 
-void ISR(void *arg){
+void batteryCheckISR (void *arg) {
   uint32_t Vbatt = 0;
   for(int i = 0; i < 16; i++) {
     Vbatt = Vbatt + analogReadMilliVolts(A0); // ADC with correction   
@@ -80,32 +86,46 @@ void ISR(void *arg){
   float Vbattf = 2 * Vbatt / 16 / 1000.0;     // attenuation ratio 1/2, mV --> V
   Serial.println(Vbattf, 3);
 
-  if (Vbattf < 3.5){
+  if (Vbattf < vBattThreshold){
     lowBattery = true;
-    if (digitalRead (LED_BUILTIN))
-      digitalWrite(LED_BUILTIN, LOW);
-    else
-      digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
   }
   else
     lowBattery = false;
+    digitalWrite(LED_BUILTIN, LOW);
+};
+
+void bleTransmissionISR (void *arg) {
+  reAdvertiseFlag = true;  // Set the flag to signal BLE transmission
+  sendDataFlag = true;
 };
 
 void setup() {
   pinMode(A0, INPUT);         // ADC
   pinMode(LED_BUILTIN, OUTPUT);
   //LED Blink Ticker
-  esp_timer_handle_t handle;
-  esp_timer_create_args_t timerISR = {
-    .callback = ISR,        //!< Function to call when timer expires
+  esp_timer_handle_t batteryCheck;
+  esp_timer_create_args_t batteryCheckISRTimer = {
+    .callback = batteryCheckISR,        //!< Function to call when timer expires
     .arg = nullptr,                          //!< Argument to pass to the callback
     .dispatch_method = ESP_TIMER_TASK,   //!< Call the callback from task or from ISR
-    .name = "Timer1",               //!< Timer name, used in esp_timer_dump function
+    .name = "Timer_Battery_Check",               //!< Timer name, used in esp_timer_dump function
     .skip_unhandled_events = true,     //!< Skip unhandled events for periodic timers
   };
-  esp_timer_create(&timerISR, &handle);
-  esp_timer_start_periodic(handle, 1000000);
+  esp_timer_create(&batteryCheckISRTimer, &batteryCheck);
+  esp_timer_start_periodic(batteryCheck, BATTERY_CHECK_INTERVAL);
 
+  //BLE Transmission
+  esp_timer_handle_t bleTransmission;
+  esp_timer_create_args_t bleTransmissionTimer = {
+    .callback = bleTransmissionISR,        //!< Function to call when timer expires
+    .arg = nullptr,                          //!< Argument to pass to the callback
+    .dispatch_method = ESP_TIMER_TASK,   //!< Call the callback from task or from ISR
+    .name = "Timer_BLE_Transmission",               //!< Timer name, used in esp_timer_dump function
+    .skip_unhandled_events = true,     //!< Skip unhandled events for periodic timers
+  };
+  esp_timer_create(&bleTransmissionTimer, &bleTransmission);
+  esp_timer_start_periodic(bleTransmission, BLE_TRANSMISSION_INTERVAL);
 
   //clear array values
   memset(movingPowerA, 0, sizeof(movingPowerA));
@@ -147,7 +167,6 @@ void setup() {
 }
 
 void loop() {
-if (1){
   if (deviceConnected) {
   
     int retryCount = 0;
@@ -171,16 +190,21 @@ if (1){
     for(uint8_t i = 0; i < 8; i++) {
       movingPowerA[i] = movingPower.avg_value(i);
     }
-    pCharacteristic->setValue((uint8_t *)&movingPowerA, sizeof(movingPowerA));
-    pCharacteristic->notify();
+    }
+    if (sendDataFlag) {
+      sendDataFlag = false;  // Reset the flag
+      // Perform BLE transmission (set new value and notify)
+      pCharacteristic->setValue((uint8_t *)&movingPowerA, sizeof(movingPowerA));
+      pCharacteristic->notify();
     }
   }
-  else{
-  BLEDevice::startAdvertising();
+  else {
+    if (reAdvertiseFlag) {
+    reAdvertiseFlag = false;  // Reset the flag
+    // Restart advertising if disconnected
+    BLEDevice::startAdvertising();
+    }
   }
-}
-else
-BLEDevice::stopAdvertising();
 }
 
 
