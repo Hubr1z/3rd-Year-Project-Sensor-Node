@@ -185,45 +185,6 @@ void loop() {
       retryCount++;
     } while (radarStatus.targetStatus == Seeed_HSP24::TargetStatus::ErrorFrame && retryCount < MAX_RETRIES);
 
-
-
-  //Parses radar status and prints results from debug serial port
-  if (radarStatus.targetStatus != Seeed_HSP24::TargetStatus::ErrorFrame) {
-    ShowSerial.print("Status: " + String(targetStatusToString(radarStatus.targetStatus)) + "  ----   ");
-    ShowSerial.println("Distance: " + String(radarStatus.distance) + "  Mode: " + String(radarStatus.radarMode));
-    
-    // if (radarStatus.radarMode == 1) {
-    //   ShowSerial.print("Move:");
-    //   for (int i = 0; i < 9; i++) {
-    //     ShowSerial.print(" " + String(radarStatus.radarMovePower.moveGate[i]) + ",");
-    //   }
-    //   ShowSerial.println("");
-    //   ShowSerial.print("Static:");
-    //   for (int i = 0; i < 9; i++) {
-    //     ShowSerial.print(" " + String(radarStatus.radarStaticPower.staticGate[i]) + ",");
-    //   }
-    //   ShowSerial.println("");
-    //   ShowSerial.println("Photosensitive: " + String(radarStatus.photosensitive));
-    // }
-      if (radarStatus.radarMode == 1) {
-      ShowSerial.print("Move:");
-      for (int i = 0; i < 8; i++) {
-        ShowSerial.print(" " + String(movingPower.avg_value(i)) + ",");
-      }
-      ShowSerial.println("");
-      ShowSerial.print("Static:");
-      for (int i = 0; i < 8; i++) {
-        ShowSerial.print(" " + String(staticPower.avg_value(i)) + ",");
-      }
-      ShowSerial.println("");
-      ShowSerial.println("Photosensitive: " + String(radarStatus.photosensitive));
-    }
-  }
-  delay(500);
-}
-
-
-
     if (radarStatus.targetStatus != Seeed_HSP24::TargetStatus::ErrorFrame) {
     //Put values into array
     for(uint8_t i = 0; i < 8; i++) {
@@ -267,5 +228,7 @@ void loop() {
   //       ShowSerial.println("");
   //       ShowSerial.println("Photosensitive: " + String(radarStatus.photosensitive));
   //     }
+
+
 
 
