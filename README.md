@@ -1,7 +1,7 @@
 # mmWave Sensor Node Source Code
 
 ## Summary of the Code
-This is one of the 2 source codes used in this mmWave for human crowdedness measurment 3rd year project. The source code in this repository is responsible for gathering data from the Seeed Studio XIAO 24GHz mmwave Human Static Presence Module to the microcontroller via the uart serial ports. The array of human value is passed through the rolling average and transmitted via Bluetooth Low Energy (BLE) to the BLE client which will process all the data coming in from the sensor nodes.
+This is 1 of the 2 source codes used in this mmWave for human crowdedness measurment 3rd year project. The source code in this repository is responsible for gathering data from the Seeed Studio XIAO 24GHz mmwave Human Static Presence Module to the microcontroller via the uart serial ports. The array of human value is passed through the rolling average and transmitted via Bluetooth Low Energy (BLE) to the BLE client which will process all the data coming in from the sensor nodes.
 
 The source code currently accomodates for 2 sensor nodes each with their own UUID. Currently, the way to switch between which UUID to use and upload requires manual editting and is acknowledged that is prone to human error during switching but that is a problem for another day.
 
